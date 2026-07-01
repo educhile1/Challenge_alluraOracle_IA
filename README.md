@@ -1,128 +1,110 @@
 # DocuMind - Asistente de Documentos RAG Inteligente
 
-DocuMind es una aplicación web funcional de **RAG (Retrieval-Augmented Generation)** que permite cargar archivos de texto, PDF o Word para construir una base de conocimientos local y consultarla utilizando lenguaje natural. La aplicación utiliza un backend en **Python** con **FastAPI** y **LangChain**, una base de datos vectorial local con **Chroma**, y un frontend responsivo y premium de estilo *glassmorphic* oscuro (HTML/CSS/JS).
+DocuMind es una aplicación web funcional de **RAG (Retrieval-Augmented Generation)** que permite interactuar mediante lenguaje natural con archivos de texto, PDF o Word. 
+
+Esta versión cuenta con una **interfaz minimalista e inmersiva de chat (estilo oscuro glassmorphic)** y automatización completa en el backend: el conocimiento se procesa automáticamente al arrancar el servidor a partir de los documentos depositados en la carpeta de datos.
 
 ---
 
 ## 🏗️ Arquitectura del Sistema
 
-El flujo de procesamiento de la aplicación sigue la arquitectura clásica de RAG:
+El flujo de procesamiento y consulta sigue la arquitectura clásica de RAG de forma automatizada:
 
 ```mermaid
 graph TD
-    A[Archivos: PDF, TXT, DOCX] -->|Subida via API| B(Carpeta: /data)
-    B -->|Ingesta de Conocimiento| C[LangChain Document Loaders]
-    C -->|Particionamiento Chunks| D[RecursiveCharacterTextSplitter]
-    D -->|Embeddings: text-embedding-004| E[Google Gemini Embeddings]
-    E -->|Indexación y Guardado| F[Chroma Vector Database]
+    A[Colocar Archivos: PDF, TXT, DOCX] -->|Copia Manual| B(Carpeta: /data)
+    B -->|Arranque del Servidor| C[FastAPI Lifespan Startup Hook]
+    C -->|Carga de Documentos| D[LangChain Document Loaders]
+    D -->|Particionamiento Chunks| E[RecursiveCharacterTextSplitter]
+    E -->|Embeddings: text-embedding-004| F[Google Gemini Embeddings]
+    F -->|Indexación y Guardado| G[Chroma Vector Database]
     
-    G[Pregunta de Usuario] -->|Envío desde Chat UI| H[FastAPI Endpoint: /api/chat]
-    H -->|Búsqueda Semántica K=4| F
-    F -->|Contexto Encontrado| I[Prompt Personalizado: Guardrails]
-    I -->|Consulta + Contexto| J[Google Gemini LLM: 1.5/2.0 Flash]
-    J -->|Respuesta Generada| K[Chat UI: Natural Language]
-    J -->|Citas y Referencias| K
+    H[Pregunta del Usuario] -->|Envío desde Chat UI| I[FastAPI Endpoint: /api/chat]
+    I -->|Búsqueda Semántica K=4| G
+    G -->|Contexto Encontrado| J[Prompt Personalizado: Guardrails]
+    J -->|Consulta + Contexto| K[Google Gemini LLM: gemini-1.5-flash]
+    K -->|Respuesta Generada| L[Chat UI: Natural Language]
+    K -->|Citas y Referencias| L
 ```
 
-1. **Carga y Particionado**: Los archivos subidos se leen dinámicamente según su formato (`PyPDFLoader` para PDF, `Docx2txtLoader` para Word, `TextLoader` para TXT). Se dividen en fragmentos lógicos de 1000 caracteres con un traslape de 200 caracteres para conservar el contexto.
-2. **Base Vectorial**: Los fragmentos se convierten a vectores numéricos de alta dimensionalidad utilizando el modelo `text-embedding-004` de Google Gemini y se persisten localmente en una base de datos **Chroma DB** en el directorio `./vector_db`.
-3. **Generación con Guardrails**: Al consultar, se recuperan los 4 fragmentos más relevantes. El prompt del sistema restringe estrictamente al LLM (por defecto `gemini-1.5-flash`) a responder **únicamente** con la información de los fragmentos, respondiendo con un mensaje controlado de seguridad si el tema consultado no está en el documento.
+1. **Ingesta Automática al Inicio**: Al iniciar el servidor web, el hook de ciclo de vida (`lifespan`) detecta los documentos en la carpeta `./data` y ejecuta el pipeline de LangChain de forma transparente.
+2. **Carga y Particionado**: Los archivos se leen dinámicamente según su formato (`PyPDFLoader`, `Docx2txtLoader` o `TextLoader`). Se dividen en fragmentos de 1000 caracteres con un traslape de 200 caracteres para conservar el contexto semántico.
+3. **Base de Datos Vectorial**: Los fragmentos se convierten a vectores utilizando el modelo oficial `text-embedding-004` de Google Gemini y se persisten en una base **Chroma DB** local (`./vector_db`).
+4. **Generación Controlada (Guardrails)**: Al consultar en el chat, se recuperan los 4 fragmentos más relevantes. El prompt restringe estrictamente al LLM (`gemini-1.5-flash`) a responder **únicamente** con la información de los fragmentos, evitando alucinaciones o uso de conocimiento externo.
 
 ---
 
 ## 🛠️ Guía de Instalación y Configuración
 
-### 1. Instalar Python en Windows (Paso Obligatorio)
+### 1. Requisitos Previos
 
-Como Python no se encuentra configurado actualmente en tu sistema, puedes instalarlo de las siguientes maneras:
+- **Python 3.10 o 3.11** instalado en tu sistema.
+- Una clave de API de Gemini. Puedes obtenerla gratis en [Google AI Studio](https://aistudio.google.com/).
 
-#### Opción A: Usando winget (La más rápida por consola)
-Abre una terminal de **PowerShell** como Administrador y ejecuta:
-```powershell
-winget install Python.Python.3.11
+### 2. Configurar Variables de Entorno
+
+Copia el archivo `.env.example` en un nuevo archivo llamado `.env` y pega tu clave API de Gemini:
+
+```env
+# Configuración del Servidor DocuMind RAG
+GEMINI_API_KEY=tu_clave_api_aqui
 ```
-*(Reinicia la terminal de comandos después de la instalación para que se actualicen las variables de entorno).*
 
-#### Opción B: Descarga Manual
-1. Ve al sitio oficial: [python.org/downloads](https://www.python.org/downloads/) y descarga **Python 3.11** o **3.10**.
-2. **CRÍTICO**: Al abrir el instalador, marca la casilla **"Add python.exe to PATH"** en la parte inferior de la ventana inicial. Si no marcas esto, el sistema no reconocerá el comando `python`.
-3. Haz clic en **Install Now**.
+El archivo `.env` ya se encuentra configurado en el `.gitignore` del proyecto para evitar subirlo a Git por accidente.
 
 ---
 
-### 2. Preparar el Entorno del Proyecto
+## 🚀 Opciones de Ejecución
 
-Una vez que tengas Python instalado y la consola reiniciada:
+### Opción A: Ejecución Local (Python)
 
-1. Abre tu terminal de comandos (PowerShell o CMD) en la carpeta del proyecto:
-   ```powershell
-   cd c:\Users\eduar\Documents\GitHub\Challenge_alluraOracle_IA
-   ```
-
-2. Crea un entorno virtual para aislar las dependencias:
+1. Abre tu terminal en la carpeta del proyecto y crea un entorno virtual:
    ```powershell
    python -m venv .venv
    ```
-
-3. Activa el entorno virtual:
-   - En **PowerShell**:
+2. Activa el entorno virtual:
+   - **En Windows (PowerShell)**:
      ```powershell
      .venv\Scripts\Activate.ps1
      ```
-     *(Si da error de permisos en PowerShell, puedes ejecutar previamente `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process`)*
-   - En **CMD (Símbolo del Sistema)**:
+   - **En Windows (CMD)**:
      ```cmd
      .venv\Scripts\activate.bat
      ```
-
-4. Instala todas las dependencias requeridas:
-   ```powershell
+   - **En macOS/Linux**:
+     ```bash
+     source .venv/bin/activate
+     ```
+3. Instala las dependencias necesarias:
+   ```bash
    pip install -r requirements.txt
    ```
+4. Inicia el servidor:
+   ```bash
+   python main.py
+   ```
+5. Accede a la aplicación en tu navegador web en: **`http://localhost:8000`**
 
 ---
 
-### 3. Configuración de API Key
+### Opción B: Ejecución en Contenedor (Docker)
 
-Tienes dos opciones para proporcionar la API Key de Google Gemini:
+El proyecto viene completamente empaquetado para Docker. Los directorios `./data` y `./vector_db` se montan como volúmenes para que puedas gestionar tus archivos y la base vectorial de manera persistente desde tu máquina host.
 
-- **Opción A (Recomendada para producción local)**: Copia el archivo `.env.example` y renómbralo a `.env`. Pega tu clave de API:
-  ```env
-  GEMINI_API_KEY=AIzaSy...
-  ```
-- **Opción B (Dinámica en caliente)**: Pega la API Key directamente en el panel de **Configuración** de la interfaz web. Se guardará de manera segura solo durante tu sesión de navegación.
-
-*¿No tienes una API Key? Puedes crear una de forma gratuita en [Google AI Studio](https://aistudio.google.com/).*
-
----
-
-## 🚀 Ejecución del Servidor
-
-Con el entorno virtual activado, inicia el servidor backend ejecutando:
-
-```powershell
-python main.py
-```
-
-El servidor se iniciará en `http://localhost:8000`.
+1. Asegúrate de tener Docker y Docker Compose instalados.
+2. Inicia los contenedores construyendo la imagen:
+   ```bash
+   docker-compose up --build
+   ```
+3. Accede al chat en: **`http://localhost:8000`**
 
 ---
 
-## 🧪 Guía de Prueba de la Aplicación
+## 🧪 Cómo Probar el Chat RAG
 
-Hemos incluido archivos de ejemplo dentro de la carpeta `sample_docs/` para que pruebes el funcionamiento del sistema inmediatamente:
-- `politicas_empresa.txt`: Contiene directrices de la empresa ficticia *TechNova Solutions* (horarios flexibles, modelo híbrido, código de vestimenta).
-- `preguntas_frecuentes.txt`: Contiene preguntas y respuestas de TI (contraseñas, Wi-Fi de invitados, cómo reservar salas de reuniones).
-
-### Flujo de Prueba Paso a Paso:
-
-1. Abre tu navegador e ingresa a: **`http://localhost:8000`**
-2. Introduce tu **Gemini API Key** en la barra lateral de configuración.
-3. Haz clic en **Explorar Archivos** (o arrastra y suelta) en la zona de carga de archivos.
-4. Selecciona los dos archivos que están en `sample_docs/` (`politicas_empresa.txt` y `preguntas_frecuentes.txt`). Verás cómo se añaden a la lista de espera con un estado pendiente.
-5. Haz clic en **Ingestar Archivos**. Esto enviará los archivos al backend, donde LangChain los segmentará, generará los embeddings vectoriales con Gemini y los guardará en la base de datos Chroma local. Verás que el estado de archivos indexados sube a `2`.
-6. **¡Listo!** Ahora puedes chatear:
-   - Haz clic en las sugerencias rápidas (ej. *¿Cómo es la política híbrida?* o *¿Cómo reservo salas de reunión?*).
-   - Verás la respuesta formulada en lenguaje natural.
-   - En la parte inferior de cada respuesta de la IA, haz clic en **"Ver fuentes y referencias"** para ver exactamente de qué archivo y qué fragmento de texto extrajo la respuesta el sistema.
-7. Haz pruebas de robustez: Pregúntale cosas no incluidas en el documento (ej. *"¿Cuál es la capital de Francia?"* o *"¿Cómo cocino una lasaña?"*). Verás que responde: *"No tengo información suficiente en los documentos cargados para responder a esa pregunta."*, lo cual confirma que los límites de seguridad funcionan correctamente.
+1. Coloca tus archivos de conocimiento (en formato `.pdf`, `.txt` o `.docx`) dentro de la carpeta `./data/`. (El proyecto incluye archivos de ejemplo como `politicas_empresa.txt` y `preguntas_frecuentes.txt` en la carpeta `sample_docs/`).
+2. Inicia o reinicia el servidor web (el backend procesará e indexará automáticamente cualquier archivo nuevo que encuentre en la carpeta de datos).
+3. Entra a **`http://localhost:8000`** en tu navegador.
+4. Escribe tus preguntas en la barra de chat.
+5. Puedes hacer clic en **"Ver fuentes y referencias"** debajo de las respuestas del asistente para desplegar los fragmentos de texto exactos y el nombre del archivo de donde provienen los datos.
+6. **Validación de Seguridad**: Si intentas preguntarle algo fuera del contexto del conocimiento proporcionado (ej. *"¿Cómo cocino una lasaña?"*), el sistema responderá controladamente: *"No tengo información suficiente en los documentos cargados para responder a esa pregunta."*
