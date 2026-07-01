@@ -1,0 +1,21 @@
+PREGUNTAS FRECUENTES (FAQ) DE TI Y SOPORTE INTERNO
+TechNova Solutions - Soporte y Facilidades
+
+P: ¿Cómo me conecto al Wi-Fi de la oficina?
+R: Debes conectarte a la red "TechNova_Secure" utilizando tus credenciales de correo corporativo y contraseña habituales. Para invitados, existe la red "TechNova_Guest" con la contraseña temporal "Welcome2026!".
+
+P: ¿Cómo solicito soporte técnico para mi computadora?
+R: Debes enviar un correo electrónico a soporte@technova.com explicando el inconveniente, o abrir un ticket directamente en nuestro portal interno de Jira Service Desk en la dirección: https://servicedesk.technova.internal. El tiempo de respuesta estándar es de menos de 2 horas para incidentes críticos y hasta 24 horas para solicitudes menores.
+
+P: ¿Cuál es el procedimiento para reservar una sala de reuniones?
+R: Las salas de reuniones se reservan a través de Google Calendar. Al crear un evento, haz clic en "Agregar salas" y selecciona una disponible en tu piso. Las salas principales son:
+- Sala Aconcagua (piso 2, capacidad para 12 personas, equipada con sistema de videoconferencia).
+- Sala Colima (piso 2, capacidad para 6 personas, pizarra digital).
+- Sala Chimborazo (piso 3, capacidad para 18 personas, ideal para presentaciones grandes).
+Recuerda cancelar la reserva si la reunión se cancela para liberar el espacio.
+
+P: ¿Cómo puedo configurar la impresora de la oficina?
+R: Las impresoras están en red. En Windows, ve a Configuración > Dispositivos > Impresoras y escáneres, selecciona "Agregar impresora" y busca la impresora correspondiente a tu piso (ej. "PRN-PISO2-COLOR" o "PRN-PISO3-BW"). Las credenciales para imprimir se ingresan mediante tu código de empleado de 4 dígitos.
+
+P: ¿Qué debo hacer si olvido mi contraseña corporativa?
+R: Si estás fuera de la oficina, puedes restablecerla de forma autónoma ingresando a https://password.technova.com y respondiendo tus preguntas de seguridad preestablecidas. Si estás en la oficina, acude al mesón de TI en el piso 2 con tu credencial física.

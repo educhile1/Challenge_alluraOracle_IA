@@ -1,0 +1,24 @@
+# Entorno y Secretos
+.env
+
+# Base de datos vectorial y datos temporales
+vector_db/
+data/
+
+# Entornos virtuales de Python
+.venv/
+venv/
+ENV/
+env/
+
+# Caché de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# IDEs
+.vscode/
+.idea/

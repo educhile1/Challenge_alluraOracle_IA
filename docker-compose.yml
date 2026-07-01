@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  documind-rag:
+    build: .
+    container_name: documind-rag
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    # Load environment variables from the local .env file
+    env_file:
+      - .env
+    # Mount persistent volumes so data is saved directly on the host machine
+    volumes:
+      - ./data:/app/data
+      - ./vector_db:/app/vector_db

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuMind RAG - Asistente de Documentos Inteligente</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+    <!-- Decorative background blobs -->
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div class="bg-blob blob-3"></div>
+
+    <div class="app-container">
+
+        <!-- Main Chat Area -->
+        <main class="chat-area">
+            <!-- Chat Header -->
+            <header class="chat-header">
+                <div class="chat-header-info">
+                    <h2 id="current-chat-title">Chat de Soporte Documental</h2>
+                    <p class="chat-header-subtitle">Pregunta sobre tus archivos cargados. Respuestas restringidas a tus fuentes.</p>
+                </div>
+                <div class="chat-header-actions">
+                    <button type="button" class="icon-btn" id="new-chat-btn" title="Limpiar conversación">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Chat Messages Container -->
+            <div class="chat-messages" id="chat-messages-container">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-icon-wrapper">
+                        <i class="fa-solid fa-comments"></i>
+                    </div>
+                    <h3 class="welcome-title">¡Bienvenido a DocuMind!</h3>
+                    <p class="welcome-subtitle">Para comenzar, simplemente escribe tu pregunta abajo. El sistema ya ha cargado y procesado los documentos automáticamente.</p>
+                    
+                    <div class="suggestions-container" id="suggestions-box">
+                        <p class="suggestions-header">Prueba preguntando:</p>
+                        <div class="suggestion-chips">
+                            <button class="suggestion-chip" data-question="¿Cuál es la jornada laboral estándar y el horario flexible?">
+                                <i class="fa-solid fa-clock"></i> ¿Horario de trabajo y flexibilidad?
+                            </button>
+                            <button class="suggestion-chip" data-question="¿Cómo funciona la política de teletrabajo e híbrido?">
+                                <i class="fa-solid fa-laptop-house"></i> ¿Cómo es la política híbrida?
+                            </button>
+                            <button class="suggestion-chip" data-question="¿Cómo me conecto al Wi-Fi de la oficina y cuál es la clave de invitados?">
+                                <i class="fa-solid fa-wifi"></i> ¿Conexión Wi-Fi e invitados?
+                            </button>
+                            <button class="suggestion-chip" data-question="¿Cuál es el procedimiento para reservar una sala de reuniones?">
+                                <i class="fa-solid fa-calendar-check"></i> ¿Cómo reservo salas de reunión?
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input Footer -->
+            <footer class="chat-footer">
+                <form class="chat-form" id="chat-form">
+                    <input type="text" id="chat-input" placeholder="Pregunta algo sobre tus documentos cargados..." autocomplete="off" />
+                    <button type="submit" id="send-btn" class="send-button" disabled>
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+                <div class="footer-notice">
+                    El sistema responderá usando únicamente la información contenida en los archivos cargados.
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toast-notification">
+        <i class="fa-solid fa-circle-info toast-icon"></i>
+        <span class="toast-message" id="toast-message">Mensaje de notificación</span>
+    </div>
+
+    <!-- JS Scripts -->
+    <script src="/assets/app.js" defer></script>
+</body>
+</html>
