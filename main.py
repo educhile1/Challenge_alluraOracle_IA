@@ -57,7 +57,7 @@ os.makedirs(STATIC_DIR, exist_ok=True)
 
 class QueryPayload(BaseModel):
     message: str
-    model_name: Optional[str] = "gemini-1.5-flash"
+    model_name: Optional[str] = "gemini-2.5-flash"
 
 def get_api_key(x_gemini_key: Optional[str] = Header(None)) -> str:
     """Helper to resolve Gemini API Key from header or environment variables."""
@@ -126,7 +126,7 @@ async def chat_query(
     if not payload.message.strip():
         raise HTTPException(status_code=400, detail="El mensaje no puede estar vacío.")
 
-    model_name = payload.model_name or "gemini-1.5-flash"
+    model_name = payload.model_name or "gemini-2.5-flash"
     result = query_rag(
         user_query=payload.message,
         vector_db_dir=VECTOR_DB_DIR,
@@ -134,6 +134,13 @@ async def chat_query(
         model_name=model_name
     )
     return result
+
+@app.get("/api/config")
+async def get_config():
+    """Returns application configuration, such as APP_ENV."""
+    return {
+        "app_env": os.getenv("APP_ENV", "production").lower().strip()
+    }
 
 @app.get("/api/files")
 async def list_files():

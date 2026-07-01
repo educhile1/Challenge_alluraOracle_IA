@@ -12,10 +12,36 @@ const elements = {
 };
 
 // Initialize application
-document.addEventListener('DOMContentLoaded', () => {
+let appConfig = { app_env: 'production' };
+
+document.addEventListener('DOMContentLoaded', async () => {
     bindEvents();
     updateSendButtonState();
+    await loadConfig();
 });
+
+async function loadConfig() {
+    try {
+        const response = await fetch('/api/config');
+        if (response.ok) {
+            appConfig = await response.json();
+            const badge = document.getElementById('env-badge');
+            if (badge) {
+                badge.style.display = 'inline-block';
+                badge.textContent = appConfig.app_env.toUpperCase();
+                if (appConfig.app_env === 'developer' || appConfig.app_env === 'development') {
+                    badge.style.background = '#4CAF50';
+                    badge.style.color = 'white';
+                } else {
+                    badge.style.background = '#f44336';
+                    badge.style.color = 'white';
+                }
+            }
+        }
+    } catch (e) {
+        console.error('No se pudo cargar la configuración', e);
+    }
+}
 
 // Event Binding
 function bindEvents() {
@@ -84,7 +110,11 @@ async function handleChatSubmit(e) {
         updateBotMessage(botMsgId, data.answer, data.sources);
     } catch (e) {
         console.error(e);
-        updateBotMessage(botMsgId, `⚠️ **Error en consulta:** ${e.message || 'No se pudo obtener una respuesta del servidor.'}`, []);
+        const isDev = appConfig.app_env === 'developer' || appConfig.app_env === 'development';
+        const errorMsg = isDev 
+            ? `⚠️ **Error en consulta:** ${e.message || 'No se pudo obtener una respuesta del servidor.'}\n\n**Log detallado:**\n\`\`\`\n${e.stack || e}\n\`\`\``
+            : `⚠️ **Error:** Lo sentimos, ha ocurrido un error al procesar tu solicitud. Por favor, inténtalo de nuevo.`;
+        updateBotMessage(botMsgId, errorMsg, []);
     } finally {
         scrollToBottom();
     }

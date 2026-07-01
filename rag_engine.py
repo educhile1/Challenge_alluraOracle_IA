@@ -1,5 +1,6 @@
 import os
 import shutil
+import datetime
 from typing import List, Dict, Any, Tuple
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, Docx2txtLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -73,9 +74,10 @@ def ingest_documents(docs_dir: str, vector_db_dir: str, gemini_api_key: str) -> 
             print(f"Warning cleaning vector_db directory: {e}")
 
     # 4. Generate embeddings and populate vector db
+    # langchain-google-genai v2 requires GOOGLE_API_KEY env var for embeddings
+    os.environ["GOOGLE_API_KEY"] = gemini_api_key
     embeddings = GoogleGenerativeAIEmbeddings(  # type: ignore
-        model="models/text-embedding-004",
-        google_api_key=gemini_api_key  # type: ignore
+        model="models/gemini-embedding-2"
     )
     
     vector_store = Chroma.from_documents(
@@ -83,12 +85,7 @@ def ingest_documents(docs_dir: str, vector_db_dir: str, gemini_api_key: str) -> 
         embedding=embeddings,
         persist_directory=vector_db_dir
     )
-    
-    # Chroma auto-persists in newer versions; persist() is deprecated/removed
-    try:
-        vector_store.persist()
-    except AttributeError:
-        pass
+    # Chroma auto-persists in v0.4+; persist() was removed
 
     return {
         "status": "success",
@@ -100,18 +97,24 @@ def query_rag(
     user_query: str,
     vector_db_dir: str,
     gemini_api_key: str,
-    model_name: str = "gemini-1.5-flash"
+    model_name: str = "gemini-2.5-flash"
 ) -> Dict[str, Any]:
     """
     Loads Vector DB, retrieves context, sends context and query to Gemini, and returns response with sources.
     """
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] [RAG] Consulta recibida: '{user_query}'")
+    print(f"[{timestamp}] [RAG] Usando modelo: {model_name}")
+
     if not gemini_api_key:
+        print(f"[{timestamp}] [RAG] [ERROR] API Key vacía.")
         return {
             "answer": "Error: Se requiere una Gemini API Key para contestar consultas.",
             "sources": []
         }
 
     if not os.path.exists(vector_db_dir) or not os.listdir(vector_db_dir):
+        print(f"[{timestamp}] [RAG] [ERROR] El directorio de base de datos vectorial no existe o está vacío: {vector_db_dir}")
         return {
             "answer": "La base de conocimientos está vacía. Por favor, sube archivos primero para responder con propiedad.",
             "sources": []
@@ -119,9 +122,11 @@ def query_rag(
 
     try:
         # Load Vector Store
+        # langchain-google-genai v2 requires GOOGLE_API_KEY env var
+        os.environ["GOOGLE_API_KEY"] = gemini_api_key
+        print(f"[{timestamp}] [RAG] Cargando base vectorial Chroma de: {vector_db_dir}...")
         embeddings = GoogleGenerativeAIEmbeddings(  # type: ignore
-            model="models/text-embedding-004",
-            google_api_key=gemini_api_key  # type: ignore
+            model="models/gemini-embedding-2"
         )
         vector_store = Chroma(
             persist_directory=vector_db_dir,
@@ -129,9 +134,9 @@ def query_rag(
         )
 
         # Set up LLM & QA Chain
+        print(f"[{timestamp}] [RAG] Configurando cliente LLM ChatGoogleGenerativeAI con modelo {model_name}...")
         llm = ChatGoogleGenerativeAI(  # type: ignore
             model=model_name,
-            google_api_key=gemini_api_key,  # type: ignore
             temperature=0.2
         )
 
@@ -162,7 +167,9 @@ def query_rag(
         rag_chain = create_retrieval_chain(retriever, question_answer_chain)
 
         # Run pipeline
+        print(f"[{timestamp}] [RAG] Ejecutando cadena RAG (Búsqueda semántica + generación)...")
         response = rag_chain.invoke({"input": user_query})
+        print(f"[{timestamp}] [RAG] ¡Respuesta recibida exitosamente desde Gemini!")
         
         # Format sources
         sources = []
@@ -189,7 +196,8 @@ def query_rag(
         }
 
     except Exception as e:
-        print(f"Error querying RAG: {e}")
+        timestamp_err = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{timestamp_err}] [RAG] [ERROR] Excepción ocurrida durante query_rag: {e}")
         return {
             "answer": f"Error al procesar la respuesta con LangChain: {str(e)}",
             "sources": []
